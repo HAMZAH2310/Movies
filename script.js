@@ -1,37 +1,58 @@
-$('.search-button').on('click', function(){
-  
-  $.ajax({
-    url: 'http://www.omdbapi.com/?apikey=[]&s=' + $('.input-keywoard').val(),
-    success: results => {
-      const movies = results.Search;
-      let cards = '';
-      movies.forEach(m => {
-        cards += showCards(m);
-      });
-      $('.movie-container').html(cards);
-  
-      //Ketika Button di click
-      $('.modal-detail-button').on('click',function(){
-        $.ajax({
-          url: 'http://www.omdbapi.com/?apikey=[]&i=' + $(this).data('imdbid'),
-          success: e =>{
-            const movieDetails = showMovieDetails(e);
-            $('.modal-body').html(movieDetails);
-          },
-          error: (e) => {
-            console.log(e.responseText);
-          }
-        })       
-    });
-    },
-    error: (e) => {
-      console.log(e.responseText);
-    }
-  });
-
+const searchButton =document.querySelector('.search-button');
+searchButton.addEventListener('click',async function(){
+  try{
+  const inputKeywoard = document.querySelector('.input-keyword');
+  const movies = await getMovies(inputKeywoard.value);
+  updateUI(movies);
+  }catch(err){
+    // console.log(err);
+    alert(err)
+  }
 });
 
+function getMovies(keywoard){
+ return fetch('http://www.omdbapi.com/?apikey=9f2c55e9&s=' + keywoard)
+  .then(response => {
+    if(!response.ok){
+      throw new Error(response.statusText);
+    }
+    return response.json();
+  })
+  .then(response => {
+    if(response.Response === "False"){
+      throw new Error(response.Error)
+    }
+    return response.Search;
+  });
+}
 
+function updateUI(movies){
+  let cards = '';
+  movies.forEach(m => cards+= showCards(m));
+  const movieContainer = document.querySelector('.movie-container');
+  movieContainer.innerHTML = cards;
+}
+
+
+// even binding
+document.addEventListener('click',async function(e){
+  if(e.target.classList.contains('modal-detail-button')){
+    const imdbid = e.target.dataset.imdbid;
+    const movieDetail = await getMovieDetail(imdbid);
+    updateUIDetail(movieDetail);
+  }
+});
+
+function getMovieDetail(imdbID){
+  return fetch('http://www.omdbapi.com/?apikey=9f2c55e9&i=' + imdbID)
+  .then(response => response.json())
+}
+
+function updateUIDetail(e){
+  const movieDetail = showMovieDetails(e);
+  const modalBody = document.querySelector('.modal-body');
+  modalBody.innerHTML = movieDetail;
+}
 
 
 function showCards(m){
